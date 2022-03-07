@@ -151,7 +151,7 @@ func Find(hay, nd image.Image) (*image.Point, error) {
 //END HAYSTACK
 
 func main() {
-	op := flag.String("op", "sc", "if tool should take screenshot")
+	op := flag.String("op", "sc", "if tool should take screenshot (sc) of find in screen (find)")
 	// coords := flag.String("coords", "0,0,0,0", "if only a piece of img should be saved, these coords will define it")
 	fname := flag.String("fname", fmt.Sprintf("%d.png", time.Now().Unix()), "file name to save sc")
 	flag.Parse()
@@ -183,7 +183,7 @@ func main() {
 		if err != nil {
 			panic(err.Error())
 		}
-		pt, err := Find(hay, screen)
+		pt, err := FindMultiThread(hay, screen)
 		if err != nil {
 			panic(err.Error())
 		}
