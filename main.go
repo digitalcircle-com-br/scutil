@@ -1,19 +1,16 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"image"
 	"image/color"
-	"image/png"
 	"log"
 	"math"
-	"os"
 	"runtime"
 	"time"
 
-	"github.com/kbinani/screenshot"
+	"github.com/go-vgo/robotgo"
 )
 
 //HAYSTACK
@@ -157,37 +154,51 @@ func main() {
 	flag.Parse()
 	switch *op {
 	case "sc":
-		img, err := screenshot.CaptureDisplay(0)
-		if err != nil {
-			panic(err.Error())
-		}
-		f, err := os.OpenFile(*fname, os.O_CREATE|os.O_WRONLY, 0600)
-		if err != nil {
-			panic(err.Error())
-		}
-		defer f.Close()
-		err = png.Encode(f, img)
-		if err != nil {
-			panic(err.Error())
-		}
+		// img, err := screenshot.CaptureDisplay(0)
+		// if err != nil {
+		// 	panic(err.Error())
+		// }
+		// f, err := os.OpenFile(*fname, os.O_CREATE|os.O_WRONLY, 0600)
+		// if err != nil {
+		// 	panic(err.Error())
+		// }
+		// defer f.Close()
+		// err = png.Encode(f, img)
+		// if err != nil {
+		// 	panic(err.Error())
+		// }
+		rect := robotgo.GetScreenRect(0)
+		bitmap := robotgo.CaptureScreen(rect.X, rect.Y, rect.W, rect.H)
+		defer robotgo.FreeBitmap(bitmap)
+		robotgo.SaveBitmap(bitmap, *fname)
+
 	case "find":
-		bs, err := os.ReadFile(*fname)
-		if err != nil {
-			panic(err.Error())
-		}
-		hay, err := png.Decode(bytes.NewReader(bs))
-		if err != nil {
-			panic(err.Error())
-		}
-		screen, err := screenshot.CaptureDisplay(0)
-		if err != nil {
-			panic(err.Error())
-		}
-		pt, err := FindMultiThread(hay, screen)
-		if err != nil {
-			panic(err.Error())
-		}
-		log.Printf("Found image at: %#v", pt)
+		// bs, err := os.ReadFile(*fname)
+		// if err != nil {
+		// 	panic(err.Error())
+		// }
+		// hay, err := png.Decode(bytes.NewReader(bs))
+		// if err != nil {
+		// 	panic(err.Error())
+		// }
+		// screen, err := screenshot.CaptureDisplay(0)
+		// if err != nil {
+		// 	panic(err.Error())
+		// }
+		// pt, err := FindMultiThread(hay, screen)
+		// if err != nil {
+		// 	panic(err.Error())
+		// }
+		// log.Printf("Found image at: %#v", pt)
+		rect := robotgo.GetScreenRect(0)
+		bitmap := robotgo.CaptureScreen(rect.X, rect.Y, rect.W, rect.H)
+		// use `defer robotgo.FreeBitmap(bit)` to free the bitmap
+		hay := robotgo.OpenBitmap(*fname)
+		defer robotgo.FreeBitmap(bitmap)
+		defer robotgo.FreeBitmap(hay)
+
+		fx, fy := robotgo.FindBitmap(bitmap, hay)
+		fmt.Println("FindBitmap------", fx, fy)
 	default:
 		log.Printf("Op: " + *op + " is not known")
 	}
