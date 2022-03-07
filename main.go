@@ -3,10 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/JamesHovious/w32"
+	"github.com/go-vgo/robotgo"
 	"log"
 	"time"
-
-	"github.com/go-vgo/robotgo"
 )
 
 func main() {
@@ -23,6 +23,7 @@ func main() {
 
 	case "find":
 		hay := robotgo.OpenBitmap(*fname)
+		haybm := robotgo.ToBitmap(hay)
 
 		if hay == nil {
 			panic(fmt.Sprintf("File %s could not be loaded", *fname))
@@ -30,8 +31,47 @@ func main() {
 
 		defer robotgo.FreeBitmap(hay)
 
-		fx, fy := robotgo.FindBitmap(hay)
-		fmt.Println("FindBitmap------", fx, fy)
+		x, y := robotgo.FindBitmap(hay)
+		w:=haybm.Width
+		h:=haybm.Height
+		t:=2
+		log.Printf("FindBitmap------%d x %d : %d x %d ", x,y, w, h)
+
+		top := &w32.RECT{
+			Left:   int32(x),
+			Top:    int32(y),
+			Right:  int32(x + w),
+			Bottom: int32(y + t),
+		}
+		bottom := &w32.RECT{
+			Left:   int32(x),
+			Top:    int32(y + h - t),
+			Right:  int32(x + w),
+			Bottom: int32(y + h),
+		}
+		left := &w32.RECT{
+			Left:   int32(x),
+			Top:    int32(y),
+			Right:  int32(x + t),
+			Bottom: int32(y + h),
+		}
+		right := &w32.RECT{
+			Left:   int32(x + w - t),
+			Top:    int32(y),
+			Right:  int32(x + w),
+			Bottom: int32(y + h),
+		}
+		hdc := w32.GetDC(0)
+		lb := &w32.LOGBRUSH{
+			LbStyle: w32.BS_SOLID,
+			LbColor: 0x0000ff,
+			LbHatch: 0,
+		}
+		brush := w32.CreateBrushIndirect(lb)
+		w32.FillRect(hdc, top, brush)
+		w32.FillRect(hdc, right, brush)
+		w32.FillRect(hdc, bottom, brush)
+		w32.FillRect(hdc, left, brush)
 
 	default:
 		log.Printf("Op: " + *op + " is not known")
