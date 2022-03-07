@@ -190,14 +190,18 @@ func main() {
 		// 	panic(err.Error())
 		// }
 		// log.Printf("Found image at: %#v", pt)
-		rect := robotgo.GetScreenRect(0)
-		bitmap := robotgo.CaptureScreen(rect.X, rect.Y, rect.W, rect.H)
+		//rect := robotgo.GetScreenRect(0)
+		//bitmap := robotgo.CaptureScreen(rect.X, rect.Y, rect.W, rect.H)
 		// use `defer robotgo.FreeBitmap(bit)` to free the bitmap
 		hay := robotgo.OpenBitmap(*fname)
-		defer robotgo.FreeBitmap(bitmap)
+		//defer robotgo.FreeBitmap(bitmap)
+		if hay == nil {
+			panic(fmt.Sprintf("File %s could not be loaded", *fname))
+		}
+
 		defer robotgo.FreeBitmap(hay)
 
-		fx, fy := robotgo.FindBitmap(bitmap, hay)
+		fx, fy := robotgo.FindBitmap(hay)
 		fmt.Println("FindBitmap------", fx, fy)
 	default:
 		log.Printf("Op: " + *op + " is not known")
