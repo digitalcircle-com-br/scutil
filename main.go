@@ -3,76 +3,127 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/JamesHovious/w32"
-	"github.com/go-vgo/robotgo"
 	"log"
+	"os"
+	"strings"
 	"time"
+
+	"github.com/gen2brain/beeep"
+	"github.com/go-vgo/robotgo"
+	hook "github.com/robotn/gohook"
 )
 
+func find(fname string) {
+	hay := robotgo.OpenBitmap(fname)
+	haybm := robotgo.ToBitmap(hay)
+
+	if hay == nil {
+		panic(fmt.Sprintf("File %s could not be loaded", fname))
+	}
+
+	defer robotgo.FreeBitmap(hay)
+
+	x, y := robotgo.FindBitmap(hay)
+	w := haybm.Width
+	h := haybm.Height
+
+	// log.Printf("FindBitmap------%d x %d : %d x %d ", x, y, w, h)
+	alert("Found %s: %d x %d : %d x %d ", fname, x, y, w, h)
+
+}
+func sc(fname string) string {
+	rect := robotgo.GetScreenRect(0)
+	bitmap := robotgo.CaptureScreen(rect.X, rect.Y, rect.W, rect.H)
+	defer robotgo.FreeBitmap(bitmap)
+	return robotgo.SaveBitmap(bitmap, fname)
+}
+
+func findFiles() {
+	ens, err := os.ReadDir(".")
+	if err != nil {
+		alert("Error reading dir: %s", err.Error())
+		return
+	}
+	for _, e := range ens {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".png") {
+			find(e.Name())
+		}
+	}
+
+}
+
+func finderDaemon() chan bool {
+	ret := make(chan bool)
+	go func() {
+		for {
+			select {
+			case <-ret:
+				alert("Stopping Finder Daemon")
+				return
+			case <-time.After(time.Second):
+				findFiles()
+			}
+		}
+	}()
+	return ret
+}
+
+func alert(s string, p ...interface{}) {
+	beeep.Alert("SCUtil", fmt.Sprintf(s, p...), "")
+}
+
+func daemon() {
+
+	var chFinderDaemon chan bool
+
+	robotgo.EventHook(hook.KeyDown, []string{"q", "ctrl", "shift"}, func(e hook.Event) {
+		fmt.Println("ctrl-shift-q")
+		robotgo.StopEvent()
+	})
+
+	robotgo.EventHook(hook.KeyDown, []string{"w", "ctrl", "shift"}, func(e hook.Event) {
+		fmt.Println("ctrl-shift-w")
+		fname := fmt.Sprintf("%d.png", time.Now().Unix())
+		sc(fname)
+		alert("File saved: %s", fname)
+	})
+
+	robotgo.EventHook(hook.KeyDown, []string{"f", "ctrl", "shift"}, func(e hook.Event) {
+		if chFinderDaemon == nil {
+			chFinderDaemon = finderDaemon()
+
+		} else {
+			chFinderDaemon <- true
+			close(chFinderDaemon)
+			chFinderDaemon = nil
+		}
+	})
+
+	robotgo.EventHook(hook.KeyDown, []string{"p", "ctrl", "shift", "alt"}, func(e hook.Event) {
+		fmt.Println("ctrl-shift-p")
+		//pfname := fmt.Sprintf("%d.png", time.Now().Unix())
+		// sc(fname)
+
+	})
+
+	ch := robotgo.EventStart()
+	<-robotgo.EventProcess(ch)
+
+}
 func main() {
-	op := flag.String("op", "sc", "if tool should take screenshot (sc) of find in screen (find)")
+	op := flag.String("op", "daemon", "[sc|find|daemon]")
 	// coords := flag.String("coords", "0,0,0,0", "if only a piece of img should be saved, these coords will define it")
 	fname := flag.String("fname", fmt.Sprintf("%d.png", time.Now().Unix()), "file name to save sc")
 	flag.Parse()
 	switch *op {
 	case "sc":
-		rect := robotgo.GetScreenRect(0)
-		bitmap := robotgo.CaptureScreen(rect.X, rect.Y, rect.W, rect.H)
-		defer robotgo.FreeBitmap(bitmap)
-		robotgo.SaveBitmap(bitmap, *fname)
+		sc(*fname)
 
 	case "find":
-		hay := robotgo.OpenBitmap(*fname)
-		haybm := robotgo.ToBitmap(hay)
+		find(*fname)
 
-		if hay == nil {
-			panic(fmt.Sprintf("File %s could not be loaded", *fname))
-		}
-
-		defer robotgo.FreeBitmap(hay)
-
-		x, y := robotgo.FindBitmap(hay)
-		w:=haybm.Width
-		h:=haybm.Height
-		t:=2
-		log.Printf("FindBitmap------%d x %d : %d x %d ", x,y, w, h)
-
-		top := &w32.RECT{
-			Left:   int32(x),
-			Top:    int32(y),
-			Right:  int32(x + w),
-			Bottom: int32(y + t),
-		}
-		bottom := &w32.RECT{
-			Left:   int32(x),
-			Top:    int32(y + h - t),
-			Right:  int32(x + w),
-			Bottom: int32(y + h),
-		}
-		left := &w32.RECT{
-			Left:   int32(x),
-			Top:    int32(y),
-			Right:  int32(x + t),
-			Bottom: int32(y + h),
-		}
-		right := &w32.RECT{
-			Left:   int32(x + w - t),
-			Top:    int32(y),
-			Right:  int32(x + w),
-			Bottom: int32(y + h),
-		}
-		hdc := w32.GetDC(0)
-		lb := &w32.LOGBRUSH{
-			LbStyle: w32.BS_SOLID,
-			LbColor: 0x0000ff,
-			LbHatch: 0,
-		}
-		brush := w32.CreateBrushIndirect(lb)
-		w32.FillRect(hdc, top, brush)
-		w32.FillRect(hdc, right, brush)
-		w32.FillRect(hdc, bottom, brush)
-		w32.FillRect(hdc, left, brush)
-
+	case "daemon":
+		daemon()
 	default:
 		log.Printf("Op: " + *op + " is not known")
 	}
