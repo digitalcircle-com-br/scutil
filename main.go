@@ -31,11 +31,15 @@ func find(fname string) {
 	alert("Found %s: %d x %d : %d x %d ", fname, x, y, w, h)
 
 }
-func sc(fname string) string {
+func sc(fname string, to int) string {
+	time.Sleep(time.Second * time.Duration(to))
 	rect := robotgo.GetScreenRect(0)
 	bitmap := robotgo.CaptureScreen(rect.X, rect.Y, rect.W, rect.H)
 	defer robotgo.FreeBitmap(bitmap)
-	return robotgo.SaveBitmap(bitmap, fname)
+	ret := robotgo.SaveBitmap(bitmap, fname)
+	alert("Screenshot saved: %s", fname)
+	return ret
+
 }
 
 func findFiles() {
@@ -84,7 +88,7 @@ func daemon() {
 	robotgo.EventHook(hook.KeyDown, []string{"w", "ctrl", "shift"}, func(e hook.Event) {
 		fmt.Println("ctrl-shift-w")
 		fname := fmt.Sprintf("%d.png", time.Now().Unix())
-		sc(fname)
+		sc(fname, 0)
 		alert("File saved: %s", fname)
 	})
 
@@ -114,10 +118,11 @@ func main() {
 	op := flag.String("op", "daemon", "[sc|find|daemon]")
 	// coords := flag.String("coords", "0,0,0,0", "if only a piece of img should be saved, these coords will define it")
 	fname := flag.String("fname", fmt.Sprintf("%d.png", time.Now().Unix()), "file name to save sc")
+	to := flag.Int("to", 0, "Timeout for screenshot")
 	flag.Parse()
 	switch *op {
 	case "sc":
-		sc(*fname)
+		sc(*fname, *to)
 
 	case "find":
 		find(*fname)
