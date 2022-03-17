@@ -1,6 +1,10 @@
 # scutil
 screen shot utils
 
+## Install
+
+go install github.com/digitalcircle-com-br/scutil@latest
+
 ## How it works:
 
 scutil has the following op modes:
