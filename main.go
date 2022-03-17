@@ -57,6 +57,7 @@ func findFiles() {
 }
 
 func finderDaemon() chan bool {
+	alert("Starting Finder Daemon")
 	ret := make(chan bool)
 	go func() {
 		for {
@@ -79,10 +80,12 @@ func alert(s string, p ...interface{}) {
 func daemon() {
 
 	var chFinderDaemon chan bool
+	var ch chan hook.Event
 
 	robotgo.EventHook(hook.KeyDown, []string{"q", "ctrl", "shift"}, func(e hook.Event) {
 		fmt.Println("ctrl-shift-q")
 		robotgo.StopEvent()
+		close(ch)
 	})
 
 	robotgo.EventHook(hook.KeyDown, []string{"w", "ctrl", "shift"}, func(e hook.Event) {
@@ -110,8 +113,10 @@ func daemon() {
 
 	})
 
-	ch := robotgo.EventStart()
+	ch = robotgo.EventStart()
 	<-robotgo.EventProcess(ch)
+	alert("Exiting")
+	os.Exit(0)
 
 }
 func main() {
