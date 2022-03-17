@@ -20,4 +20,3 @@ In this mode, a screenshot will be taken. Optional timeout may be provided throu
     - ctrl+shift+w: will take a screenshot of the screen at each press
     - ctrl+shift+f:In this mode, every 1 sec scutil will try to find every .png file on its directory in the screen. If found, a notification will be displayed.
     - ctrl+shift+q: closes the app (if in daemon mode)
-
