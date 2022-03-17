@@ -10,7 +10,8 @@ go install github.com/digitalcircle-com-br/scutil@latest
 scutil has the following op modes:
 
 ### sc
-    In this mode, a screenshot will be taken. Optional timeout may be provided throught -to parameter, being to the number of seconds to wait
+
+In this mode, a screenshot will be taken. Optional timeout may be provided throught -to parameter, being to the number of seconds to wait
 
 - find
     This mode will try to find the image named by fname in the screen
